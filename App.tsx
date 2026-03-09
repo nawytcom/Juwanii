@@ -49,7 +49,6 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const mainImgRef = useRef<HTMLImageElement | null>(null);
-  const logoImgRef = useRef<HTMLImageElement | null>(null);
   const instagramIconRef = useRef<HTMLImageElement | null>(null);
   const tiktokIconRef = useRef<HTMLImageElement | null>(null);
 
@@ -110,25 +109,6 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-            logoImgRef.current = img;
-            setState(prev => ({ 
-              ...prev, 
-              logo: event.target?.result as string,
-              showLogo: true
-            }));
-        };
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const getLines = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
     if (!text) return [];
@@ -158,7 +138,7 @@ const App: React.FC = () => {
     if (!ctx) return;
 
     const W = 1080;
-    const H = 1350;
+    const H = 1080;
     canvas.width = W;
     canvas.height = H;
 
@@ -192,60 +172,39 @@ const App: React.FC = () => {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Gradient bar at the bottom (#5D0E1D) - Solid at bottom/text, fades at top
-    const barHeight = 580;
-    const grad = ctx.createLinearGradient(0, H - barHeight, 0, H);
-    grad.addColorStop(0, 'rgba(93, 14, 29, 0)');   // Start transparent
-    grad.addColorStop(0.3, 'rgba(93, 14, 29, 0.7)'); // Gradual fade
-    grad.addColorStop(0.5, 'rgba(93, 14, 29, 1)');   // Become fully solid
-    grad.addColorStop(1, 'rgba(93, 14, 29, 1)');     // Stay solid to bottom
-    ctx.fillStyle = grad;
+    // Solid bar at the bottom (#5D0E1D)
+    const barHeight = 340;
+    ctx.fillStyle = 'rgb(93, 14, 29)';
     ctx.fillRect(0, H - barHeight, W, barHeight);
 
-    // Draw Logo (Top Right)
-    if (state.showLogo && logoImgRef.current) {
-      const logo = logoImgRef.current;
-      const scale = state.logoScale / 100;
-      const targetW = 200 * scale;
-      const targetH = (logo.height / logo.width) * targetW;
-      
-      const padding = 40;
-      const logoX = W - targetW - padding;
-      const logoY = padding;
-
-      const getColoredCanvas = (color: string, w: number, h: number) => {
-        const offCanvas = document.createElement('canvas');
-        offCanvas.width = w;
-        offCanvas.height = h;
-        const offCtx = offCanvas.getContext('2d');
-        if (offCtx) {
-          offCtx.drawImage(logo, 0, 0, w, h);
-          offCtx.globalCompositeOperation = 'source-in';
-          offCtx.fillStyle = color;
-          offCtx.fillRect(0, 0, w, h);
-        }
-        return offCanvas;
-      };
-
-      const maroonLogo = getColoredCanvas('rgb(93, 14, 29)', targetW, targetH);
-      const whiteLogo = getColoredCanvas('#FFFFFF', targetW, targetH);
-
-      // Draw Maroon Outline (Outer - Thicker)
-      const outerStroke = 12;
-      for (let i = 0; i < 360; i += 22.5) {
-        const rad = (i * Math.PI) / 180;
-        ctx.drawImage(maroonLogo, logoX + Math.cos(rad) * outerStroke, logoY + Math.sin(rad) * outerStroke);
-      }
-
-      // Draw White Outline (Inner - Subtle)
-      const innerStroke = 4;
-      for (let i = 0; i < 360; i += 45) {
-        const rad = (i * Math.PI) / 180;
-        ctx.drawImage(whiteLogo, logoX + Math.cos(rad) * innerStroke, logoY + Math.sin(rad) * innerStroke);
-      }
-      
-      ctx.drawImage(logo, logoX, logoY, targetW, targetH);
-    }
+    // Draw "دينمو الصعيد" Box (Top Right)
+    ctx.save();
+    const labelText = "دينمو الصعيد";
+    ctx.font = 'bold 38px Almarai';
+    const labelWidth = ctx.measureText(labelText).width;
+    const labelPaddingX = 25;
+    const labelPaddingY = 12;
+    const labelRectW = labelWidth + (labelPaddingX * 2);
+    const labelRectH = 65;
+    
+    const labelX = W - labelRectW - 40;
+    const labelY = 40;
+    
+    // Draw Box Background (Maroon)
+    ctx.fillStyle = 'rgb(93, 14, 29)';
+    ctx.fillRect(labelX, labelY, labelRectW, labelRectH);
+    
+    // Draw Box Border (White)
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(labelX, labelY, labelRectW, labelRectH);
+    
+    // Draw Text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelText, labelX + labelRectW/2, labelY + labelRectH/2 + 4);
+    ctx.restore();
 
     if (state.headline) {
       const maxWidth = W - 140; // Increased width to allow more words
@@ -253,7 +212,7 @@ const App: React.FC = () => {
       
       const words = state.headline.split(' ');
       const lines: string[][] = [];
-      const wordsPerLine = 5;
+      const wordsPerLine = 6;
       
       for (let i = 0; i < words.length; i += wordsPerLine) {
         lines.push(words.slice(i, i + wordsPerLine));
@@ -273,30 +232,35 @@ const App: React.FC = () => {
       // Position text inside the solid part of the bar
       const startY = H - (barHeight * 0.38) - (headlineTotalHeight / 2);
 
-      // Draw News Label (Text with Vertical Line)
+      // Draw News Label (Text in Yellow Rectangle)
       if (state.showNewsLabel && state.newsLabel) {
         ctx.save();
-        ctx.font = 'bold 45px Almarai';
+        ctx.font = 'bold 42px Almarai';
+        
+        const textWidth = ctx.measureText(state.newsLabel).width;
+        const paddingX = 30;
+        const paddingY = 15;
+        const rectW = textWidth + (paddingX * 2);
+        const rectH = 60;
         
         // Position
-        const textX = W - 120; // Right aligned with padding
-        const textY = startY - 180; 
+        const rectX = W - rectW - 80; // Right aligned with padding
+        const rectY = (H - barHeight) - (rectH / 2); 
         
-        // Draw Vertical Yellow Line at the beginning (right side for RTL)
+        // Draw Yellow Background Rectangle
         ctx.fillStyle = '#FFFF00';
-        const vLineHeight = 55;
-        const vLineWidth = 10;
-        ctx.fillRect(textX + 20, textY - vLineHeight/2, vLineWidth, vLineHeight);
+        ctx.fillRect(rectX, rectY, rectW, rectH);
+        
+        // Draw Black Border
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(rectX, rectY, rectW, rectH);
         
         // Draw Text
-        ctx.fillStyle = '#FFFFFF';
-        ctx.textAlign = 'right';
+        ctx.fillStyle = '#000000'; // Black text on yellow background
+        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.shadowColor = '#000000';
-        ctx.shadowBlur = 8;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 3;
-        ctx.fillText(state.newsLabel, textX, textY + 5);
+        ctx.fillText(state.newsLabel, rectX + rectW/2, rectY + rectH/2 + 4);
         
         ctx.restore();
       }
@@ -324,17 +288,7 @@ const App: React.FC = () => {
           ctx.font = 'bold 52px Almarai'; 
           const wordWidth = wordWidths[idx];
           
-          // Custom color pattern: 1st white, 2nd-3rd yellow, 4th-5th white, 6th yellow, 7th-9th white, 10th-12th yellow, 13th+ white
-          let isYellow = false;
-          if (globalWordIndex === 0) isYellow = false;
-          else if (globalWordIndex === 1 || globalWordIndex === 2) isYellow = true;
-          else if (globalWordIndex === 3 || globalWordIndex === 4) isYellow = false;
-          else if (globalWordIndex === 5) isYellow = true;
-          else if (globalWordIndex >= 6 && globalWordIndex <= 8) isYellow = false;
-          else if (globalWordIndex >= 9 && globalWordIndex <= 11) isYellow = true;
-          else isYellow = false;
-          
-          ctx.fillStyle = isYellow ? '#FFFF00' : '#FFFFFF';
+          ctx.fillStyle = '#FFFFFF';
           
           ctx.textAlign = 'right';
           ctx.fillText(word, Math.round(currentX), Math.round(startY + (i * lineHeight)));
@@ -364,7 +318,7 @@ const App: React.FC = () => {
     if (!isDragging.current || !canvasRef.current || state.isImageLocked) return;
     const rect = canvasRef.current.getBoundingClientRect();
     const sx = 1080 / rect.width;
-    const sy = 1350 / rect.height;
+    const sy = 1080 / rect.height;
     const dx = (x - lastPos.current.x) * sx;
     const dy = (y - lastPos.current.y) * sy;
     
@@ -420,7 +374,7 @@ const App: React.FC = () => {
       if (canvasRef.current) {
         const rect = canvasRef.current.getBoundingClientRect();
         const sx = 1080 / rect.width;
-        const sy = 1350 / rect.height;
+        const sy = 1080 / rect.height;
         const dx = (midX - lastPos.current.x) * sx;
         const dy = (midY - lastPos.current.y) * sy;
         setState(p => ({
@@ -479,36 +433,6 @@ const App: React.FC = () => {
              {state.image && <input type="range" min="20" max="600" value={state.imageZoom} onChange={e => setState(p => ({...p, imageZoom: parseInt(e.target.value)}))} className="w-full accent-red-600 h-1 bg-black" />}
           </section>
 
-          <section className="bg-[#1f1f1f] p-4 rounded-xl border border-white/5 space-y-4">
-             <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">شعار القناة (اللوجو)</label>
-                <div className="flex gap-2">
-                  <button onClick={() => setState(p => ({...p, showLogo: !p.showLogo}))} className={`p-1.5 rounded-lg ${state.showLogo ? 'bg-blue-500/20 text-blue-500' : 'bg-white/5'}`}><Eye className="w-4 h-4" /></button>
-                </div>
-             </div>
-             <div onClick={() => document.getElementById('logo-upload')?.click()} className="group h-24 border-2 border-dashed border-white/10 bg-white/5 rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all hover:border-white/30">
-                <Upload className="w-5 h-5 text-gray-600 mb-1" />
-                <span className="text-[10px] text-gray-500 font-bold">رفع اللوجو</span>
-                <input id="logo-upload" type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-             </div>
-             {state.logo && (
-               <div className="space-y-2">
-                 <div className="flex justify-between text-[10px] text-gray-400">
-                   <span>حجم اللوجو (مثبت)</span>
-                   <span>140%</span>
-                 </div>
-                 <input 
-                   type="range" 
-                   min="10" 
-                   max="500" 
-                   value={140} 
-                   readOnly
-                   className="w-full accent-gray-600 h-1 bg-black opacity-50 cursor-not-allowed"
-                   disabled
-                 />
-               </div>
-             )}
-          </section>
 
           <section className="bg-[#1f1f1f] p-4 rounded-xl border border-white/5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
@@ -541,7 +465,7 @@ const App: React.FC = () => {
             <canvas 
               ref={canvasRef} 
               className="max-h-[70vh] w-auto block cursor-move" 
-              style={{ aspectRatio: '1080 / 1350' }} 
+              style={{ aspectRatio: '1080 / 1080' }} 
               onMouseDown={e => handleStart(e.clientX, e.clientY)}
               onMouseMove={e => handleMove(e.clientX, e.clientY)}
               onMouseUp={handleEnd}
