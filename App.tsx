@@ -464,8 +464,7 @@ const App: React.FC = () => {
         <div className="max-w-full relative shadow-2xl rounded-sm overflow-hidden border border-white/5 bg-[#111] touch-none">
             <canvas 
               ref={canvasRef} 
-              className="max-h-[70vh] w-auto block cursor-move" 
-              style={{ aspectRatio: '1080 / 1080' }} 
+              className="w-full md:w-auto max-h-[70vh] block cursor-move aspect-square" 
               onMouseDown={e => handleStart(e.clientX, e.clientY)}
               onMouseMove={e => handleMove(e.clientX, e.clientY)}
               onMouseUp={handleEnd}
