@@ -167,15 +167,23 @@ const App: React.FC = () => {
       const drawY = (H - drawH) / 2 + state.imageOffsetY;
       ctx.drawImage(mainImg, drawX, drawY, drawW, drawH);
 
-      // Maroon tint overlay (10% opacity)
-      ctx.fillStyle = 'rgba(93, 14, 29, 0.1)';
+      // Purple tint overlay (10% opacity)
+      ctx.fillStyle = 'rgba(74, 20, 140, 0.1)';
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Solid bar at the bottom (#5D0E1D)
+    // Solid bar at the bottom (Purple)
     const barHeight = 340;
-    ctx.fillStyle = 'rgb(93, 14, 29)';
+    ctx.fillStyle = 'rgb(74, 20, 140)';
     ctx.fillRect(0, H - barHeight, W, barHeight);
+    
+    // Add a top border to the bar for more definition
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, H - barHeight);
+    ctx.lineTo(W, H - barHeight);
+    ctx.stroke();
 
     // Draw "دينمو الصعيد" Box (Top Right)
     ctx.save();
@@ -190,8 +198,8 @@ const App: React.FC = () => {
     const labelX = W - labelRectW - 40;
     const labelY = 40;
     
-    // Draw Box Background (Maroon)
-    ctx.fillStyle = 'rgb(93, 14, 29)';
+    // Draw Box Background (Purple)
+    ctx.fillStyle = 'rgb(74, 20, 140)';
     ctx.fillRect(labelX, labelY, labelRectW, labelRectH);
     
     // Draw Box Border (White)
@@ -238,26 +246,57 @@ const App: React.FC = () => {
         ctx.font = 'bold 42px Almarai';
         
         const textWidth = ctx.measureText(state.newsLabel).width;
-        const paddingX = 30;
-        const paddingY = 15;
+        const paddingX = 40;
         const rectW = textWidth + (paddingX * 2);
-        const rectH = 60;
+        const rectH = 70;
         
         // Position
-        const rectX = W - rectW - 80; // Right aligned with padding
+        const rectX = W - rectW - 60; 
         const rectY = (H - barHeight) - (rectH / 2); 
         
-        // Draw Yellow Background Rectangle
-        ctx.fillStyle = '#FFFF00';
-        ctx.fillRect(rectX, rectY, rectW, rectH);
+        // Draw Shadow
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetY = 5;
+
+        // Draw White/Light-Gray Background (Rounded with Gradient)
+        const gradient = ctx.createLinearGradient(rectX, rectY, rectX, rectY + rectH);
+        gradient.addColorStop(0, '#FFFFFF');
+        gradient.addColorStop(1, '#F0F0F0'); // Slightly gray at bottom
+        ctx.fillStyle = gradient;
         
-        // Draw Black Border
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(rectX, rectY, rectW, rectH);
+        const radius = 20; // More rounded
+        ctx.beginPath();
+        ctx.moveTo(rectX + radius, rectY);
+        ctx.lineTo(rectX + rectW - radius, rectY);
+        ctx.quadraticCurveTo(rectX + rectW, rectY, rectX + rectW, rectY + radius);
+        ctx.lineTo(rectX + rectW, rectY + rectH - radius);
+        ctx.quadraticCurveTo(rectX + rectW, rectY + rectH, rectX + rectW - radius, rectY + rectH);
+        ctx.lineTo(rectX + radius, rectY + rectH);
+        ctx.quadraticCurveTo(rectX, rectY + rectH, rectX, rectY + rectH - radius);
+        ctx.lineTo(rectX, rectY + radius);
+        ctx.quadraticCurveTo(rectX, rectY, rectX + radius, rectY);
+        ctx.closePath();
+        ctx.fill();
         
-        // Draw Text
-        ctx.fillStyle = '#000000'; // Black text on yellow background
+        // Add a glossy highlight to the top half
+        ctx.save();
+        ctx.clip(); // Clip to the rounded rect
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fillRect(rectX, rectY, rectW, rectH / 2);
+        ctx.restore();
+        
+        // Draw Purple Border
+        ctx.strokeStyle = 'rgb(74, 20, 140)';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        
+        // Reset shadow for text
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetY = 0;
+
+        // Draw Text (Purple)
+        ctx.fillStyle = 'rgb(74, 20, 140)'; 
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(state.newsLabel, rectX + rectW/2, rectY + rectH/2 + 4);
