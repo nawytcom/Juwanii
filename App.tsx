@@ -138,7 +138,7 @@ const App: React.FC = () => {
     if (!ctx) return;
 
     const W = 1080;
-    const H = 1080;
+    const H = 1350;
     canvas.width = W;
     canvas.height = H;
 
@@ -503,7 +503,7 @@ const App: React.FC = () => {
         <div className="max-w-full relative shadow-2xl rounded-sm overflow-hidden border border-white/5 bg-[#111] touch-none">
             <canvas 
               ref={canvasRef} 
-              className="w-full md:w-auto max-h-[70vh] block cursor-move aspect-square" 
+              className="w-full md:w-auto max-h-[70vh] block cursor-move aspect-[1080/1350]" 
               onMouseDown={e => handleStart(e.clientX, e.clientY)}
               onMouseMove={e => handleMove(e.clientX, e.clientY)}
               onMouseUp={handleEnd}
