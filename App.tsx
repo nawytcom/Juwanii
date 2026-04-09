@@ -433,10 +433,19 @@ const App: React.FC = () => {
       if (state.footerText) {
         ctx.save();
         ctx.font = 'bold 42px Almarai';
-        ctx.fillStyle = '#000000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
+        
+        // Draw White Outline
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 6;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(state.footerText, W / 2, H - 40);
+        
+        // Draw Black Fill
+        ctx.fillStyle = '#000000';
         ctx.fillText(state.footerText, W / 2, H - 40);
+        
         ctx.restore();
       }
 
