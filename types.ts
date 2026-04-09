@@ -17,6 +17,7 @@ export interface EditorState {
   showTikTok: boolean;
   showRepresentativeLabel: boolean;
   showNewsLabel: boolean;
+  showTopLabel: boolean;
   logoScale: number;
   imageOffsetX: number;
   imageOffsetY: number;

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Download, Upload, Loader2, Lock, Unlock, Instagram, Music2, Eye, Facebook } from 'lucide-react';
+import { Download, Upload, Loader2, Lock, Unlock, Instagram, Music2, Eye, Facebook, RefreshCcw } from 'lucide-react';
 import { EditorState } from './types';
 
 const THEME_RED = "#a11b1b";
@@ -9,22 +9,23 @@ const FB_BLUE = "#1877F2";
 const App: React.FC = () => {
   const [state, setState] = useState<EditorState>({
     image: null,
-    logo: null, 
+    logo: "https://k.top4top.io/p_3751c9zrq0.png", 
     headline: "اكتب العنوان الرئيسي هنا",
     archiveLabel: "", 
-    footerText: "", 
+    footerText: "تابعنا دينمو الصعيد من قلب سوهاج", 
     instagramText: "Gawany Official",
     tiktokText: "Gawany Official",
     representativeLabel: "صورة تمثيلية",
     newsLabel: "خبر",
     showArchiveLabel: false,
-    showLogo: false,
+    showLogo: true,
     showSocialIcons: false,
     showFacebook: false,
     showInstagram: false, 
     showTikTok: false,    
     showRepresentativeLabel: true,
     showNewsLabel: true,
+    showTopLabel: true,
     logoScale: 140, 
     imageOffsetX: 0,
     imageOffsetY: 0,
@@ -49,6 +50,7 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const mainImgRef = useRef<HTMLImageElement | null>(null);
+  const logoImgRef = useRef<HTMLImageElement | null>(null);
   const instagramIconRef = useRef<HTMLImageElement | null>(null);
   const tiktokIconRef = useRef<HTMLImageElement | null>(null);
 
@@ -85,6 +87,67 @@ const App: React.FC = () => {
     ig.onload = checkLoaded;
     tt.onload = checkLoaded;
   }, []);
+
+  useEffect(() => {
+    if (state.logo && state.showLogo) {
+      const loadLogo = (url: string, attempt: number = 0) => {
+        const proxies = [
+          (u: string) => `https://images.weserv.nl/?url=${encodeURIComponent(u)}&default=ssl:k.top4top.io/p_3751c9zrq0.png`,
+          (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+          (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+          (u: string) => u // Direct as last resort
+        ];
+
+        if (attempt >= proxies.length) {
+          console.error("All logo loading attempts failed");
+          logoImgRef.current = null;
+          drawCanvas();
+          return;
+        }
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = proxies[attempt](url);
+        
+        img.onload = () => {
+          logoImgRef.current = img;
+          drawCanvas();
+        };
+
+        img.onerror = () => {
+          console.warn(`Logo load attempt ${attempt} failed, trying next...`);
+          loadLogo(url, attempt + 1);
+        };
+      };
+
+      loadLogo(state.logo);
+    } else {
+      logoImgRef.current = null;
+      drawCanvas();
+    }
+  }, [state.logo, state.showLogo]);
+
+  const handleRefreshLogo = () => {
+    if (state.logo) {
+      // Clear current logo and re-trigger effect with a small state change if needed
+      // or just call the loading logic again.
+      logoImgRef.current = null;
+      const buster = `t=${Date.now()}`;
+      const urlWithBuster = `${state.logo}${state.logo.includes('?') ? '&' : '?'}${buster}`;
+      
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = `https://images.weserv.nl/?url=${encodeURIComponent(urlWithBuster)}`;
+      img.onload = () => {
+        logoImgRef.current = img;
+        drawCanvas();
+      };
+      img.onerror = () => {
+        // If buster + proxy fails, try the normal sequence
+        setState(p => ({ ...p, logo: urlWithBuster }));
+      };
+    }
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (state.isImageLocked) return;
@@ -137,7 +200,7 @@ const App: React.FC = () => {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    const W = 1080;
+    const W = 1200;
     const H = 1350;
     canvas.width = W;
     canvas.height = H;
@@ -186,33 +249,62 @@ const App: React.FC = () => {
     ctx.stroke();
 
     // Draw "دينمو الصعيد" Box (Top Right)
-    ctx.save();
-    const labelText = "دينمو الصعيد";
-    ctx.font = 'bold 38px Almarai';
-    const labelWidth = ctx.measureText(labelText).width;
-    const labelPaddingX = 25;
-    const labelPaddingY = 12;
-    const labelRectW = labelWidth + (labelPaddingX * 2);
-    const labelRectH = 65;
-    
-    const labelX = W - labelRectW - 40;
-    const labelY = 40;
-    
-    // Draw Box Background (Purple)
-    ctx.fillStyle = 'rgb(74, 20, 140)';
-    ctx.fillRect(labelX, labelY, labelRectW, labelRectH);
-    
-    // Draw Box Border (White)
-    ctx.strokeStyle = '#FFFFFF';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(labelX, labelY, labelRectW, labelRectH);
-    
-    // Draw Text
-    ctx.fillStyle = '#FFFFFF';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(labelText, labelX + labelRectW/2, labelY + labelRectH/2 + 4);
-    ctx.restore();
+    if (state.showTopLabel) {
+      ctx.save();
+      const labelText = "دينمو الصعيد";
+      ctx.font = 'bold 38px Almarai';
+      const labelWidth = ctx.measureText(labelText).width;
+      const labelPaddingX = 25;
+      const labelPaddingY = 12;
+      const labelRectW = labelWidth + (labelPaddingX * 2);
+      const labelRectH = 65;
+      
+      const labelX = W - labelRectW - 40;
+      const labelY = 40;
+      
+      // Draw Box Background (Purple)
+      ctx.fillStyle = 'rgb(74, 20, 140)';
+      ctx.fillRect(labelX, labelY, labelRectW, labelRectH);
+      
+      // Draw Box Border (White)
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(labelX, labelY, labelRectW, labelRectH);
+      
+      // Draw Text
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(labelText, labelX + labelRectW/2, labelY + labelRectH/2 + 4);
+      ctx.restore();
+    }
+
+    // Draw Logo (Top Left)
+    if (state.showLogo && logoImgRef.current) {
+      const logo = logoImgRef.current;
+      const logoAspect = logo.width / logo.height;
+      const logoH = state.logoScale;
+      const logoW = logoH * logoAspect;
+      
+      const logoX = 40;
+      const logoY = 40;
+
+      // Draw White Outline (following the shape)
+      ctx.save();
+      // We draw the logo multiple times with a small offset to create a sharp outline
+      // Using a white filter to make the logo entirely white for the outline
+      ctx.filter = 'brightness(0) invert(1)'; 
+      const thickness = 4;
+      for (let angle = 0; angle < 360; angle += 45) {
+        const dx = Math.cos(angle * Math.PI / 180) * thickness;
+        const dy = Math.sin(angle * Math.PI / 180) * thickness;
+        ctx.drawImage(logo, logoX + dx, logoY + dy, logoW, logoH);
+      }
+      ctx.restore();
+
+      // Draw the actual logo on top
+      ctx.drawImage(logo, logoX, logoY, logoW, logoH);
+    }
 
     if (state.headline) {
       const maxWidth = W - 140; // Increased width to allow more words
@@ -336,8 +428,19 @@ const App: React.FC = () => {
           globalWordIndex++;
         });
       });
-      ctx.restore();
 
+      // Draw Footer Text (Bottom of the bar)
+      if (state.footerText) {
+        ctx.save();
+        ctx.font = 'bold 42px Almarai';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(state.footerText, W / 2, H - 40);
+        ctx.restore();
+      }
+
+      ctx.restore();
     }
 
   }, [state, fontsLoaded, iconsLoaded]);
@@ -475,6 +578,70 @@ const App: React.FC = () => {
 
           <section className="bg-[#1f1f1f] p-4 rounded-xl border border-white/5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">إعدادات الشعار والعلامات</label>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
+                <span className="text-xs text-gray-300">دينمو الصعيد</span>
+                <button 
+                  onClick={() => setState(p => ({ ...p, showTopLabel: !p.showTopLabel }))}
+                  className={`px-3 py-1 rounded-md text-[10px] font-bold transition-colors ${state.showTopLabel ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}
+                >
+                  {state.showTopLabel ? 'تشغيل' : 'إيقاف'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg">
+                <span className="text-xs text-gray-300">الشعار (Logo)</span>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={handleRefreshLogo}
+                    className="p-1.5 bg-white/5 hover:bg-white/10 rounded-md text-gray-400 transition-colors"
+                    title="تحديث الشعار"
+                  >
+                    <RefreshCcw className="w-3.5 h-3.5" />
+                  </button>
+                  <button 
+                    onClick={() => setState(p => ({ ...p, showLogo: !p.showLogo }))}
+                    className={`px-3 py-1 rounded-md text-[10px] font-bold transition-colors ${state.showLogo ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}
+                  >
+                    {state.showLogo ? 'تشغيل' : 'إيقاف'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-500 uppercase">رابط الشعار (URL)</label>
+                <input 
+                  type="text" 
+                  value={state.logo || ''} 
+                  onChange={e => setState(p => ({ ...p, logo: e.target.value }))}
+                  placeholder="https://example.com/logo.png"
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 transition-colors"
+                />
+              </div>
+
+              {state.logo && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">حجم الشعار</label>
+                    <span className="text-[10px] text-gray-400">{state.logoScale}px</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="50" 
+                    max="300" 
+                    value={state.logoScale} 
+                    onChange={e => setState(p => ({ ...p, logoScale: parseInt(e.target.value) }))}
+                    className="w-full accent-purple-600 h-1 bg-black" 
+                  />
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="bg-[#1f1f1f] p-4 rounded-xl border border-white/5 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">محتوى الخبر</label>
             </div>
             <div className="space-y-4">
@@ -488,6 +655,10 @@ const App: React.FC = () => {
               <div className="space-y-1">
                 <span className="text-[9px] font-bold text-gray-400">العنوان الرئيسي (أبيض)</span>
                 <textarea value={state.headline} onChange={e => setState(p => ({...p, headline: e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white text-center font-bold text-lg min-h-[120px]" dir="rtl" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[9px] font-bold text-gray-400">نص التذييل (أسفل الصورة)</span>
+                <input type="text" value={state.footerText} onChange={e => setState(p => ({...p, footerText: e.target.value}))} className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-white text-center font-bold text-xs" dir="rtl" />
               </div>
             </div>
           </section>
@@ -503,7 +674,7 @@ const App: React.FC = () => {
         <div className="max-w-full relative shadow-2xl rounded-sm overflow-hidden border border-white/5 bg-[#111] touch-none">
             <canvas 
               ref={canvasRef} 
-              className="w-full md:w-auto max-h-[70vh] block cursor-move aspect-[1080/1350]" 
+              className="w-full md:w-auto max-h-[70vh] block cursor-move aspect-[1200/1350]" 
               onMouseDown={e => handleStart(e.clientX, e.clientY)}
               onMouseMove={e => handleMove(e.clientX, e.clientY)}
               onMouseUp={handleEnd}
